@@ -1,0 +1,1 @@
+We are writing an app for mac that can be triggered with a universal configurable shortcut. It will present an input window and a save button. The user can configure a file to point to in the main configuration. When text is entered into the text box it is appended to the end of the file from the configuration.

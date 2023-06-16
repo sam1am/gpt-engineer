@@ -1,0 +1,116 @@
+Core classes, functions, and methods:
+
+1. ConfigWindow class - Represents the main configuration window where the user can set the shortcut and target file.
+   - save_config method - Saves the shortcut and target file to a configuration file.
+   - load_config method - Loads the shortcut and target file from the configuration file.
+
+2. InputWindow class - Represents the input window that appears when the shortcut is triggered.
+   - submit_text method - Appends the input text to the target file along with a timestamp and closes the input window.
+   - cancel method - Closes the input window without saving the text.
+
+3. register_shortcut function - Registers the universal configurable shortcut.
+
+4. shortcut_triggered function - Opens the input window when the shortcut is triggered.
+
+5. main function - Entry point of the application, initializes the ConfigWindow and registers the shortcut.
+
+Now, let's create the files:
+
+```config_window.py
+import tkinter as tk
+from tkinter import filedialog
+
+class ConfigWindow(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Configuration")
+        self.geometry("300x200")
+
+        self.shortcut_label = tk.Label(self, text="Shortcut:")
+        self.shortcut_label.pack()
+
+        self.shortcut_entry = tk.Entry(self)
+        self.shortcut_entry.pack()
+
+        self.file_label = tk.Label(self, text="Target file:")
+        self.file_label.pack()
+
+        self.file_button = tk.Button(self, text="Choose file", command=self.choose_file)
+        self.file_button.pack()
+
+        self.save_button = tk.Button(self, text="Save", command=self.save_config)
+        self.save_button.pack()
+
+        self.target_file = None
+
+    def choose_file(self):
+        self.target_file = filedialog.askopenfilename()
+
+    def save_config(self):
+        with open("config.txt", "w") as config_file:
+            config_file.write(f"{self.shortcut_entry.get()}\n{self.target_file}")
+
+    def load_config(self):
+        try:
+            with open("config.txt", "r") as config_file:
+                shortcut, target_file = config_file.read().splitlines()
+                self.shortcut_entry.insert(0, shortcut)
+                self.target_file = target_file
+        except FileNotFoundError:
+            pass
+```
+
+```input_window.py
+import tkinter as tk
+from datetime import datetime
+
+class InputWindow(tk.Toplevel):
+    def __init__(self, target_file):
+        super().__init__()
+        self.title("Input")
+        self.geometry("300x200")
+
+        self.text_input = tk.Text(self)
+        self.text_input.pack()
+
+        self.submit_button = tk.Button(self, text="Submit", command=self.submit_text)
+        self.submit_button.pack()
+
+        self.cancel_button = tk.Button(self, text="Cancel", command=self.cancel)
+        self.cancel_button.pack()
+
+        self.target_file = target_file
+
+    def submit_text(self):
+        with open(self.target_file, "a") as file:
+            file.write(f"--- {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            file.write(self.text_input.get("1.0", tk.END))
+        self.destroy()
+
+    def cancel(self):
+        self.destroy()
+```
+
+```main.py
+import keyboard
+from config_window import ConfigWindow
+from input_window import InputWindow
+
+def register_shortcut(shortcut, callback):
+    keyboard.add_hotkey(shortcut, callback)
+
+def shortcut_triggered(config_window):
+    input_window = InputWindow(config_window.target_file)
+    input_window.mainloop()
+
+def main():
+    config_window = ConfigWindow()
+    config_window.load_config()
+    register_shortcut(config_window.shortcut_entry.get(), lambda: shortcut_triggered(config_window))
+    config_window.mainloop()
+
+if __name__ == "__main__":
+    main()
+```
+
+These files should be placed in the same directory. To run the application, execute the `main.py` file.
